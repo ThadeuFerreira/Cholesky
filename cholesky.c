@@ -141,22 +141,6 @@ void multiply(fpoint_t * A, fpoint_t * B, fpoint_t * C) {
 	}
 }
 
-/*!
- * @brief Stores in matrix \b B the multiplication between n-order square
- * matrix \b A and its transpose.
- * \n Modified from \url{http://rosettacode.org/wiki/Matrix_multiplication#C}
- */
-void multiplyByTranspose(fpoint_t * A, fpoint_t * B) {
-	int i, j, k;
-	for (i = 0; i < order; i++) {
-    	for (j = 0; j < order; j++) {
-        	B[i * order + j] = (fpoint_t) 0.00;
-        	for (k = 0; k < order; k++) {
-            	B[i * order + j] += (A[i * order + k] * A[j * order + k]);
-        	}
-    	}
-	}
-}
 
 /*!
  * @brief Stores in matrix \b AI the multiplication between the transpose of
