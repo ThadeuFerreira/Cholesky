@@ -34,183 +34,185 @@
  * ftp://gcc.gnu.org/pub/gcc/summit/2003/Optimizing%20for%20space.pdf
  */
 
+#define PRINT_MATRICES 1 /*! @brief Configures if matrices are printed in screen. */
+#define TIMED 0 /*! @brief Inserts timing checks in the program */
+#define ERROR_ANALYSIS 2  /*!
+                       	* @brief Computes mean error. Values are:
+                       	* \n 0 No error is computed
+                       	* \n 1 Only error in relation to Identity matrix is computed
+                       	* \n 2 Both error in relation to Identity and original
+                       	* matrices are computed.
+                       	*/
 
-int ORDER=0;                 /*!< Order of square matrix. */
-#define SQRT_INT 5 /*! @def SQRT_INT @brief Iteration number of routine sqrt_ */
+int order = 0; /*! @brief Square matrix order               	*/
+int n_int = 0; /*! @brief Number of iterations in routine sqrt_ */
 
 
-
-/******************************************************************************/
-/*                               LIBRARIES                                     */
-/******************************************************************************/
 #include <stdio.h>
 #include <stdlib.h>
-typedef float fpoint_t; /*! @typedef fpoint_t @brief Type of variable for float point \c float and \c fpoint_t */
+#if(TIMED == 1)
+#include <time.h>
+#endif
+
+typedef double fpoint_t; /*! @typedef fpoint_t @brief Variable type for easy
+                          	* interchange between \c float and \c double
+                          	* primitive types.
+                          	*/
 /**
  * Macro for debug purposes.
  */
 #define DBG(x) printf("[%s:%d]%s():%s = %f\n",__FILE__,__LINE__,__FUNCTION__,#x,x);
+#define allocate() (fpoint_t*) calloc(order * order, sizeof (fpoint_t));
 
-/**
- * @brief Show the matrix \b A 
- * @param[in] A matrix to be showed
+/*!
+ * @brief Print matrix \b A in screen
  */
 void show_matrix(fpoint_t * A) {
-    int i, j;
-    for (i = 0; i < ORDER; i++) {
-        for (j = 0; j < ORDER; j++) {
-            printf("%.9f ", A[i * ORDER + j]);
-        }
-        printf("\n");
-    }
+	int i, j;
+	for (i = 0; i < order; i++) {
+    	for (j = 0; j < order; j++) {
+        	printf("%.9f ", A[i * order + j]);
+    	}
+    	printf("\n");
+	}
 }
 
-/**
- * @brief Calculates the square root of a number "x".
- * @param[in] x number to be calculated square root.
- * @return Square root of a number "x".
+/*!
+ * @brief Calculates the square root of a floating-point number \b x.
  */
 fpoint_t sqrt_(fpoint_t x) {
-    fpoint_t val = 1.0;
-    int times = SQRT_INT;
-    while (times-- > 0) {
-        val = val / 2 + x / (val * 2);
-    }
-    return val;
+	fpoint_t val = 1.0;
+	int times = n_int;
+	while (times-- > 0) {
+    	val = val / 2 + x / (val * 2);
+	}
+	return val;
 }
 
-/**
- * @brief Do the Cholesky decomposition. Modified of http://rosettacode.org/wiki/Cholesky_decomposition#C
- * @param[in] A matrix of order #ORDER.
- * @param[out] L lower triangular matrix from of Cholesky decomposition.
+/*!
+ * @brief Computes in \b L the lower triangular matrix generated from Cholesky
+ * decomposition of matrix \b A.
+ * \n Modified from \url{http://rosettacode.org/wiki/Cholesky_decomposition#C}
  */
 void cholesky(fpoint_t * A, fpoint_t * L) {
-    int i, j, k;
-    fpoint_t s;
+	int i, j, k;
+	fpoint_t s;
 
-    for (i = 0; i < ORDER; i++) {
-        for (j = 0; j < (i + 1); j++) {
-            s = 0;
-            for (k = 0; k < j; k++) {
-                s += L[i * ORDER + k] * L[j * ORDER + k];
-            }
-            L[i * ORDER + j] = (i == j) ? sqrt_(A[i * ORDER + i] - s) : (1.0 / L[j * ORDER + j] * (A[i * ORDER + j] - s));
-        }
-    }
+	for (i = 0; i < order; i++) {
+    	for (j = 0; j < (i + 1); j++) {
+        	s = 0;
+        	for (k = 0; k < j; k++) {
+            	s += L[i * order + k] * L[j * order + k];
+        	}
+        	L[i * order + j] = (i == j) ? sqrt_(A[i * order + i] - s) : (1.0 / L[j * order + j] * (A[i * order + j] - s));
+    	}
+	}
 }
 
-/**
- * @brief Do a matrix elements multiplication.
- * Modified of http://rosettacode.org/wiki/Matrix_multiplication#C
- * @param[in] A pointer to matrix.
- * @param[in] B pointer to matrix.
- * @return multiplication of two matrices elements.
+/*!
+ * @brief Computes the dot product between a row (pointed by \c fpoint_t \c *
+ * \c row ) and a column (pointed by \c fpoint_t \c * \c col) of two square
+ * matrix of order #order.
+ * \n Modified from \url{http://rosettacode.org/wiki/Matrix_multiplication#C}
  */
-fpoint_t dot(fpoint_t *A, fpoint_t *B) {
-    fpoint_t r = 0;
-    int len = ORDER;
-    while (len--) {
-        r += *A++ * *B;
-        B += ORDER;
-    }
-    return r;
+fpoint_t dot(fpoint_t * row, fpoint_t * col) {
+	fpoint_t r = 0;
+	int len = order;
+	while (len--) {
+    	r += *row++ * *col;
+    	col += order;
+	}
+	return r;
 }
 
-/**
- * @brief Do a matrix elements multiplication.
- * Modified of http://rosettacode.org/wiki/Matrix_multiplication#C
- * @param[in] A pointer to matrix.
- * @param[in] B pointer to matrix.
- * @return multiplication of two matrices elements.
- */
-fpoint_t dot2(fpoint_t *A, fpoint_t *B) {
-    fpoint_t r = 0;
-    int len = ORDER;
-    
-    while (len--) {
-        r += *A * *B;
-        A += ORDER;
-        B += ORDER;
-    }
-    return r;
-}
-
-/**
- * @brief Do a multiplication of two matrices. Modified of http://rosettacode.org/wiki/Matrix_multiplication#C
- * @param[in] A first matrix.
- * @param[in] B second matrix.
- * @param[out] C result of the multiplication.
+/*!
+ * @brief Computes in \b C the multiplication of square matrices \b A and \b B (
+ * \c C \c = \c A \c * \c B ).
+ * \n Modified from \url{http://rosettacode.org/wiki/Matrix_multiplication#C}
  */
 void multiply(fpoint_t * A, fpoint_t * B, fpoint_t * C) {
-    fpoint_t * pa;
-    int i, j;
+	fpoint_t * pa;
+	int i, j;
 
-    for (pa = A, i = 0; i < ORDER; i++, pa += ORDER) {
-        for (j = 0; j < ORDER; j++) {
-            *C++ = dot(pa, B + j);
-        }
-    }
+	for (pa = A, i = 0; i < order; i++, pa += order) {
+    	for (j = 0; j < order; j++) {
+        	*C++ = dot(pa, B + j);
+    	}
+	}
+}
+
+/*!
+ * @brief Stores in matrix \b B the multiplication between n-order square
+ * matrix \b A and its transpose.
+ * \n Modified from \url{http://rosettacode.org/wiki/Matrix_multiplication#C}
+ */
+void multiplyByTranspose(fpoint_t * A, fpoint_t * B) {
+	int i, j, k;
+	for (i = 0; i < order; i++) {
+    	for (j = 0; j < order; j++) {
+        	B[i * order + j] = (fpoint_t) 0.00;
+        	for (k = 0; k < order; k++) {
+            	B[i * order + j] += (A[i * order + k] * A[j * order + k]);
+        	}
+    	}
+	}
+}
+
+/*!
+ * @brief Stores in matrix \b AI the multiplication between the transpose of
+ * square matrix \b G and the original \b G matrix.
+ * \n Code based on \url{http://rosettacode.org/wiki/Matrix_multiplication#C}
+ */
+void inverseFromInvertedL(fpoint_t * AI, fpoint_t * G) {
+	int i, j, k;
+	for (i = 0; i < order; i++) {
+    	for (j = 0; j < order; j++) {
+        	AI[i * order + j] = 0;
+        	for (k = 0; k < order; k++) {
+            	AI[i * order + j] += (G[k * order + i] * G[k * order + j]);
+        	}
+    	}
+	}
 }
 
 /**
- * @brief Do a multiplication of a lower triangular with its transpose. 
- * Note they are the same elements, so only one input matrix is need 
- * Adapted from http://rosettacode.org/wiki/Matrix_multiplication#C
- * @param[in] A matrix.
- * @param[out] C result of the multiplication.
+ * @brief Computes in \b G the inverse of a lower triangular matrix \b L.
+ * \n From book \e Digital \e Media \e Processing: \e DPS \e Algorithms \e Using
+ * \e C. (H. Malepati, 2010) Pcode 9.6.
  */
-void multiplyByTranspose(fpoint_t * A, fpoint_t * C) {
-    fpoint_t *pa;
-    int i, j;
+void inverseTriangular(fpoint_t * L, fpoint_t * G) {
+	int i, j, k;
+	fpoint_t sum;
 
-    for (pa = A, i = 0; i < ORDER; i++, pa += ORDER) {
-        for (j = 0; j < ORDER; j++) {
-            *C++ = dot2(A+i, A + j);
-        }
-    }
-}
-
-/**
- * @brief Computes the inverse of a lower triangular matrix L.
- * From book \e Digital \e Media \e Processing: \e DPS \e Algorithms \e Using \e C. (H. Malepati, 2010) Pcode 9.6.
- * @param[in] L lower inverse triangular matrix of order #ORDER to be inverted.
- * @param[out] G inverse matrix \b L
- */
-void inverseTriangular(fpoint_t * A, fpoint_t * AI) {
-    int i, j, k;
-    fpoint_t sum;
-
-    for (i = 0; i < ORDER; i++) {
-        AI[i * (ORDER + 1)] = ((fpoint_t) 1) / A[i * (ORDER + 1)];
-        for (j = 0; j < i; j++) {
-            sum = 0;
-            for (k = j; k < i; k++) {
-                sum = sum - A[i * ORDER + k] * AI[k * ORDER + j];
-            }
-            AI[i * ORDER + j] = sum / A[i * (ORDER + 1)];
-        }
-    }
+	for (i = 0; i < order; i++) {
+    	G[i * (order + 1)] = ((fpoint_t) 1) / L[i * (order + 1)];
+    	for (j = 0; j < i; j++) {
+        	sum = 0;
+        	for (k = j; k < i; k++) {
+            	sum = sum - L[i * order + k] * G[k * order + j];
+        	}
+        	G[i * order + j] = sum / L[i * (order + 1)];
+    	}
+	}
 
 }
 
 /**
- * @brief Calculates the error matrix.
- * @param[in] A square matrix of #ORDER original order.
- * @param[in] R square matrix of #ORDER recovered order.
- * @param[out] E error matrix with the difference between the elements.
- * @return mean square error.
+ * @brief Computes the mean error of matrix \b R in relation to matrix \b A.
+ * \note It is up to the user to ensure that matrices \b A and \b R have the
+ * same order.
  */
-fpoint_t calculaErro(fpoint_t * A, fpoint_t * R, fpoint_t * E){
-    int i,j;
-    fpoint_t erro = 0;
+fpoint_t computeError(fpoint_t * A, fpoint_t * R) {
+	int i, j;
+	fpoint_t error = 0, sum = 0;
 
-    for(i = 0; i< ORDER; i++){
-        for(j=0;j<ORDER;j++){
-            E[i * ORDER + j] = A[i * ORDER + j] - R[i * ORDER + j];
-            erro += E[i*ORDER + j] * E[i*ORDER +j];
-        }
-    }
-    return (sqrt_(erro)/(ORDER*ORDER));
+	for (i = 0; i < order; i++) {
+    	for (j = 0; j < order; j++) {
+        	error = A[i * order + j] - R[i * order + j];
+        	sum += error/(order * order);
+    	}
+	}
+	return sum;
 }
 
 /**
@@ -219,136 +221,135 @@ fpoint_t calculaErro(fpoint_t * A, fpoint_t * R, fpoint_t * E){
  * @param[out] AT transpose matrix of "A".
  */
 void transpose(fpoint_t * A, fpoint_t * AT) {
-    int i, j;
+	int i, j;
 
-    for (i = 0; i < ORDER; i++) {
-        for (j = i; j < ORDER; j++) {
-            AT[i * ORDER + j] = A[j * ORDER + i];
-        }
-    }
+	for (i = 0; i < order; i++) {
+    	for (j = 0; j < order; j++) {
+        	AT[i * order + j] = A[j * order + i];
+    	}
+	}
 }
 
 /**
- * @brief Computes the precision of ...
- * @para[in] A matrix ...
- * @return the precision of...
+ * @brief Computes the mean error of n-square matrix \b A in relation to Identity
+ * matrix or order \c n.
  */
-fpoint_t computePrecision(fpoint_t * A){
-    int i,j;
-    fpoint_t erro = 0, soma = 0;
+fpoint_t computePrecision(fpoint_t * A) {
+	int i, j;
+	fpoint_t error = 0, sum = 0;
 
-    for(i = 0; i< ORDER; i++){
-        for(j=0;j<ORDER;j++){
-            erro = ((i==j)? (fpoint_t) 1: (fpoint_t) 0)- A[i*ORDER +j];
-            soma = soma + erro * erro;
-        }
-    }
-    return (sqrt_(soma)/(ORDER*ORDER));
+	for (i = 0; i < order; i++) {
+    	for (j = 0; j < order; j++) {
+        	error = (((i == j) ? (fpoint_t) 1 : (fpoint_t) 0) - A[i * order + j]);
+        	sum += error/(order * order);
+    	}
+	}
+	return sum;
 }
 
-/**
- * @brief
- * @return
+/*!
+ * @brief Main function. For automated tests, two parameters must be given:
+ * \n 1) Name of file in which the matrix is stored;
+ * \n 2) Number of iteractions used in sqrt_ method.
  */
 int main(int argc, char* argv[]) {
 
-    /*
-     * Faz a alocação dinâmica das matrizes.
-     * Algumas pode ser "reaproveitadas" para economizar memória.
-     */
-    int i;
-    fpoint_t averageError;
-    
-	// Matriz a ser invertida
-    fpoint_t *A;
-    
-    //Caso dados estejam em arquivo
-    if(argc > 1){
-	    FILE *fid = fopen(argv[1], "r");
-	    fscanf(fid, "%d", &ORDER);
-	    A = (fpoint_t*) calloc(ORDER*ORDER, sizeof(fpoint_t));
-	    for (i=0; i < (ORDER * ORDER); i++){
-    		fscanf(fid, "%f", &A[i]);
+#if (TIMED == 1)
+	clock_t start, end;
+#endif
+	int i;
+	fpoint_t averageError;
+	fpoint_t * A; /*! \brief Matrix to be inverted */
+	fpoint_t * L; /*! \brief Lower triangular matrix obtained from Cholesky
+               	* decomposition
+               	*/
+	fpoint_t * G; /*! \brief Inverse of lower triangular matrix */
+
+	// If tests are automated
+	if (argc > 1) {
+    	FILE *fid = fopen(argv[1], "r");
+    	fscanf(fid, "%d", &order);
+    	A = (fpoint_t*) calloc(order*order, sizeof (fpoint_t));
+    	for (i = 0; i < (order * order); i++) {
+        	fscanf(fid, "%lf", &A[i]);
     	}
     	fclose(fid);
-    }
-    //Caso os dados sejam digitados via linha de comando
-    else {
-    	scanf("%d", &ORDER);
-    	A = (fpoint_t*) calloc(ORDER*ORDER, sizeof(fpoint_t));
-    	for (i=0; i < (ORDER * ORDER); i++){
-    		scanf("%f", &A[i]);
+    	n_int = atoi(argv[2]);
+	}//otherwise, read from prompt.
+	else {
+    	scanf("%d", &order);
+    	A = (fpoint_t*) calloc(order*order, sizeof (fpoint_t));
+    	for (i = 0; i < (order * order); i++) {
+        	scanf("%lf", &A[i]);
     	}
-    }
-    
-             
-    
-    fpoint_t * L = (fpoint_t*) calloc(ORDER * ORDER, sizeof (fpoint_t)); //Matriz triangular inferior resultante da decomposição de Cholesky (L)
-    fpoint_t *LI = (fpoint_t*) calloc(ORDER * ORDER, sizeof (fpoint_t)); //Matriz inversa da matriz triangular inferior (L^-1)
-    fpoint_t *AUX = (fpoint_t*) calloc(ORDER * ORDER, sizeof (fpoint_t)); //Matriz auxiliar
-    fpoint_t *AI = (fpoint_t*) calloc(ORDER * ORDER, sizeof (fpoint_t)); //Matriz inversa de A (A^-1)
-    fpoint_t *I = (fpoint_t*) calloc(ORDER * ORDER, sizeof (fpoint_t)); //Matriz identidade (I)
+	}
+	L = allocate();
+	G = allocate();
 
+#if(PRINT_MATRICES == 1)
+	// Print original matrix in screen
+	printf("\nOriginal Matrix:\n");
+	show_matrix(A);
+#endif
 
-    //Mostra a matriz original
-    printf("\nMatriz Original (A):\n");
-    show_matrix(A);
+#if (TIMED == 1)
+	start = clock();
+#endif
+	// Computes lower trangular matrix from Cholesky Decomposition
+	cholesky(A, L);
 
-    //Calcula a matriz triangular inferior pela decomposição de Cholesky
-    printf("\nMatriz triangular inferior por Cholesky (L):\n");
-    cholesky(A, L);
-    show_matrix(L);
+#if(PRINT_MATRICES == 1)
+	// Print lower triangular matrix in screen
+	printf("\nLower Triangular Matrix from Cholesky Decomposition:\n");
+	show_matrix(L);
+#endif
 
-    //Calcula Transposta
-    transpose(L, AUX);
+#if(ERROR_ANALYSIS > 1)    
+	// Computes mean error in recovering original matrix
+	multiplyByTranspose(L, G);
+	averageError = computeError(A, G);
+	printf("\nAverage error in original matrix: %.9f\n", averageError);
+	free(G);
+	G = allocate();
+#endif
 
-    printf("\nRecupera Matriz A:\n");
-    multiply(L, AUX, I);
-    show_matrix(I);
+	// Computes the inverse of lower triangular matrix and find inverse of A
+	inverseTriangular(L, G); 	// G = L ^ (-1)
+	free(L);
+	L = allocate();
+	inverseFromInvertedL(L, G); // L = G' * G
 
-    printf("\nErro de recuperacao:\n");
-    averageError = calculaErro(A,I,AI);
-    show_matrix(AI);
-    printf("\nErro medio: %.9f\n",averageError);
+#if (TIMED == 1)
+	end = clock();
+	printf("\nTime: %f ms.\n", (((double) (end - start)) * 1000 / (CLOCKS_PER_SEC)));
+#endif
 
-    //Calcula a matriz inversa da matriz triangular inferior
-    printf("\nLI:\n");
-    inverseTriangular(L, LI);
-    show_matrix(LI);
+#if(PRINT_MATRICES == 1)
+	// Print inverse matrix in screen
+	printf("\nInverse Matrix:\n");
+	show_matrix(L);
+#endif
 
-    //Calcula a matriz inversa, ie: AI = (LI)T * (LI) */
-    /**
-     * Código LaTeX:
-     * \begin{equation}
-     *      A^{-1} = (L^{-1})^T(L^{-1})
-     * \end{equation}
-     */
-    printf("\nMatriz inversa nova rotina (A^-1):\n");
-    multiplyByTranspose(LI,AI);
-    show_matrix(AI);
+	// Computes the Identity matrix from original matrix and its inverse
+	free(G);
+	G = allocate();
+	multiply(A, L, G);
 
-    //Calcula a matriz identidade, ie: I = A*AI
-    /**
-     * Código LaTeX:
-     * \begin{equation}
-     *      I = AA^{-1}
-     * \end{equation}
-     */
+#if(PRINT_MATRICES == 1)
+	// Print identity matrix in screen
+	printf("\nIdentity Matrix:\n");
+	show_matrix(G);
+#endif
 
-    printf("\nMatriz identidade (A*A^-1):\n");
-    multiply(A, AI, I);
-    show_matrix(I);
+#if(ERROR_ANALYSIS > 0)
+	// Computes mean error of multiplication
+	averageError = computePrecision(G);
+	printf("\nAverage error in identity matrix: %.9f\n", averageError);
+#endif
+	/* Deallocate matrices. */
+	free(A);
+	free(L);
+	free(G);
 
-    printf("\nPrecision Error:\n");
-    averageError = computePrecision(I);
-    printf("\nAverage: %.9f\n",averageError);
-
-    /* Desaloca as matrizes da RAM. */
-    free(L);
-    free(LI);
-    free(AUX);
-    free(AI);
-    free(I);
-
-    return 0;
+	return 0;
 }
