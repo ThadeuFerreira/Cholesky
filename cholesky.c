@@ -49,7 +49,6 @@ int n_int = 0; /*! @brief Number of iterations in routine sqrt_ */
 
 
 #include <stdio.h>
-#include <stdlib.h>
 #if(TIMED == 1)
 #include <time.h>
 #endif
@@ -62,8 +61,13 @@ typedef double fpoint_t; /*! @typedef fpoint_t @brief Variable type for easy
  * Macro for debug purposes.
  */
 #define DBG(x) printf("[%s:%d]%s():%s = %f\n",__FILE__,__LINE__,__FUNCTION__,#x,x);
-#define allocate() (fpoint_t*) calloc(order * order, sizeof (fpoint_t));
+int allocate(fpoint_t *A)
+ {
+        int i;
+     for(i = 0; i < 25; i ++)
+        A[i] = 0;
 
+}
 /*!
  * @brief Print matrix \b A in screen
  */
@@ -259,17 +263,16 @@ int main(int argc, char* argv[]) {
 #endif
 	int i;
 	fpoint_t averageError;
-	fpoint_t * A; /*! \brief Matrix to be inverted */
-	fpoint_t * L; /*! \brief Lower triangular matrix obtained from Cholesky
+	fpoint_t A[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}; /*! \brief Matrix to be inverted */
+	fpoint_t L[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}; /*! \brief Lower triangular matrix obtained from Cholesky
                	* decomposition
                	*/
-	fpoint_t * G; /*! \brief Inverse of lower triangular matrix */
+	fpoint_t G[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}; /*! \brief Inverse of lower triangular matrix */
 
 	// If tests are automated
 	if (argc > 1) {
     	FILE *fid = fopen(argv[1], "r");
     	fscanf(fid, "%d", &order);
-    	A = (fpoint_t*) calloc(order*order, sizeof (fpoint_t));
     	for (i = 0; i < (order * order); i++) {
         	fscanf(fid, "%lf", &A[i]);
     	}
@@ -277,14 +280,15 @@ int main(int argc, char* argv[]) {
     	n_int = atoi(argv[2]);
 	}//otherwise, read from prompt.
 	else {
-    	scanf("%d", &order);
-    	A = (fpoint_t*) calloc(order*order, sizeof (fpoint_t));
+    	FILE *fid = fopen("Matriz_5x5.txt", "r");
+    	fscanf(fid, "%d", &order);
     	for (i = 0; i < (order * order); i++) {
-        	scanf("%lf", &A[i]);
+        	fscanf(fid, "%lf", &A[i]);
     	}
+    	fclose(fid);
+    	n_int = 10;
 	}
-	L = allocate();
-	G = allocate();
+
 
 #if(PRINT_MATRICES == 1)
 	// Print original matrix in screen
@@ -304,19 +308,17 @@ int main(int argc, char* argv[]) {
 	show_matrix(L);
 #endif
 
-#if(ERROR_ANALYSIS > 1)    
+#if(ERROR_ANALYSIS > 1)
 	// Computes mean error in recovering original matrix
 	multiplyByTranspose(L, G);
 	averageError = computeError(A, G);
 	printf("\nAverage error in original matrix: %.9f\n", averageError);
-	free(G);
-	G = allocate();
+	allocate(G);
 #endif
 
 	// Computes the inverse of lower triangular matrix and find inverse of A
 	inverseTriangular(L, G); 	// G = L ^ (-1)
-	free(L);
-	L = allocate();
+	allocate(L);
 	inverseFromInvertedL(L, G); // L = G' * G
 
 #if (TIMED == 1)
@@ -331,8 +333,7 @@ int main(int argc, char* argv[]) {
 #endif
 
 	// Computes the Identity matrix from original matrix and its inverse
-	free(G);
-	G = allocate();
+	allocate(G);
 	multiply(A, L, G);
 
 #if(PRINT_MATRICES == 1)
@@ -347,9 +348,6 @@ int main(int argc, char* argv[]) {
 	printf("\nAverage error in identity matrix: %.9f\n", averageError);
 #endif
 	/* Deallocate matrices. */
-	free(A);
-	free(L);
-	free(G);
 
 	return 0;
 }
