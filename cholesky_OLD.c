@@ -39,7 +39,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef float fpoint_t;  /*! @typedef fpoint_t @brief Floating-point variable type. (typedef created in order to easily interchange between \c float and \c double 
+typedef float fpoint_t;  /*! @typedef fpoint_t @brief Floating-point variable type. (typedef created in order to easily interchange between \c float and \c double
 types.*/
 
 /*! Debug messages macro  */
@@ -134,7 +134,7 @@ void multiplyByTranspose(fpoint_t * A, fpoint_t * B, int n) {
 }
 
 /**
- * @brief Computes in \b \c LI the inverse of n-order lower triangular matrix \b \c L. Code based on Pcode 9.6 from book \e Digital \e Media \e Processing: \e DPS \e 
+ * @brief Computes in \b \c LI the inverse of n-order lower triangular matrix \b \c L. Code based on Pcode 9.6 from book \e Digital \e Media \e Processing: \e DPS \e
 Algorithms \e Using \e C. (H. Malepati, 2010).
  */
 void inverseTriangular(fpoint_t * L, fpoint_t * LI,int n) {
@@ -155,7 +155,7 @@ void inverseTriangular(fpoint_t * L, fpoint_t * LI,int n) {
 }
 
 /**
- * @brief Computes the average error of n-square matrix \b \c R in relation to n-order square matrix \b \c A. 
+ * @brief Computes the average error of n-square matrix \b \c R in relation to n-order square matrix \b \c A.
  */
 fpoint_t computeError(fpoint_t * A, fpoint_t * R, int n){
     int i,j;
@@ -166,7 +166,7 @@ fpoint_t computeError(fpoint_t * A, fpoint_t * R, int n){
             error += A[i*n + j] - R[i*n +j];
         }
     }
-    return (erro/(n*n));
+    return (error/(n*n));
 }
 
 /**
@@ -202,16 +202,22 @@ int main(void) {
     fpoint_t averageError;
     n_int = 5;		// \TODO: Insert as parameter
     int order = 3;	// \TODO: Insert as parameter
-    
+
     fpoint_t A[] = {25, 15, -5,
              15, 18,  0,
              -5,  0, 11};
-    fpoint_t * L = (fpoint_t*) calloc(order * order, sizeof (fpoint_t)); //Matriz triangular inferior resultante da decomposição de Cholesky (L)
+
+  /*fpoint_t * L = (fpoint_t*) calloc(order * order, sizeof (fpoint_t)); //Matriz triangular inferior resultante da decomposição de Cholesky (L)
     fpoint_t *LI = (fpoint_t*) calloc(order * order, sizeof (fpoint_t)); //Matriz inversa da matriz triangular inferior (L^-1)
     fpoint_t *LIT = (fpoint_t*) calloc(order * order, sizeof (fpoint_t)); //Matriz transposta da matriz inversa da matriz triangular inferior ((L^-1)^T)
     fpoint_t *AI = (fpoint_t*) calloc(order * order, sizeof (fpoint_t)); //Matriz inversa de A (A^-1)
     fpoint_t *I = (fpoint_t*) calloc(order * order, sizeof (fpoint_t)); //Matriz identidade (I)
-
+*/
+	fpoint_t L[] = {0,0,0,            0,0,0,             0,0,0};
+	fpoint_t LI []= {0,0,0,            0,0,0,             0,0,0};
+	fpoint_t LIT[] = {0,0,0,            0,0,0,             0,0,0};
+	fpoint_t AI[] = {0,0,0,            0,0,0,             0,0,0};
+	fpoint_t I[] = {0,0,0,            0,0,0,             0,0,0};
 
     //Mostra a matriz original
     printf("\nMatriz Original (A):\n");
@@ -229,7 +235,7 @@ int main(void) {
     show_matrix(I,order);
 
     printf("\nErro de recuperacao:\n");
-    averageError = calculaErro(A,I,AI,order);
+    //averageError = calculaErro(A,I,AI,order);
     show_matrix(AI,order);
     printf("\nErro medio: %.9f\n",averageError);
 
@@ -263,7 +269,7 @@ int main(void) {
     printf("\nMatriz inversa nova rotina (A^-1):\n");
     multiplyByTranspose(LIT,AI,order);
     show_matrix(AI,order);
-    
+
 
     //Calcula a matriz identidade, ie: I = A*AI
     /**
@@ -282,11 +288,11 @@ int main(void) {
     printf("\nAverage: %.9f\n",averageError);
 
     /* Desaloca as matrizes da RAM. */
-    free(L);
+   /* free(L);
     free(LI);
     free(LIT);
     free(AI);
     free(I);
-
+*/
     return 0;
 }
